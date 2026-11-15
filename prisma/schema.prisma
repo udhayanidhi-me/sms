@@ -1,0 +1,232 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String          @id @default(cuid())
+  email        String          @unique
+  passwordHash String
+  name         String
+  role         String          @default("STUDENT") // ADMIN, FACULTY, STUDENT
+  avatar       String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  student      StudentProfile?
+  faculty      FacultyProfile?
+}
+
+model StudentProfile {
+  id             String            @id @default(cuid())
+  userId         String            @unique
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  candidateCode  String            @unique // e.g. 47320105
+  registrationNo String?           @unique
+  programId      String
+  program        Program           @relation(fields: [programId], references: [id])
+  
+  batch          String            // e.g. 2023-2028
+  semester       Int               @default(1)
+  section        String            @default("A")
+  
+  gender         String?
+  dob            DateTime?
+  phone          String?
+  address        String?
+  guardianName   String?
+  guardianPhone  String?
+  admissionDate  DateTime          @default(now())
+  status         String            @default("ACTIVE") // ACTIVE, GRADUATED, SUSPENDED
+
+  attendance     AttendanceEntry[]
+  examResults    ExamResult[]
+  invoices       Invoice[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+model FacultyProfile {
+  id           String             @id @default(cuid())
+  userId       String             @unique
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  employeeCode String             @unique
+  designation  String             // Professor, Associate Professor, Asst. Professor
+  department   String             // Law, Management, Humanities
+  qualification String?
+  phone        String?
+  joiningDate  DateTime           @default(now())
+
+  allocations  CourseAllocation[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+}
+
+model Department {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  code     String    @unique
+  programs Program[]
+}
+
+model Program {
+  id             String           @id @default(cuid())
+  name           String           // e.g. 5-Year Integrated B.A. LL.B.
+  code           String           @unique // BALLB, BBALLB, BCOMLLB, LLB, LLM
+  durationYears  Int              @default(5)
+  totalSemesters Int              @default(10)
+  departmentId   String
+  department     Department       @relation(fields: [departmentId], references: [id])
+
+  courses        Course[]
+  students       StudentProfile[]
+  feeStructures  FeeStructure[]
+  exams          Exam[]
+}
+
+model Course {
+  id          String             @id @default(cuid())
+  code        String             @unique // e.g. EN 1121, LC 1101
+  name        String             // e.g. English Language Skills, Law of Contracts I
+  credits     Int                @default(4)
+  semester    Int
+  programId   String
+  program     Program            @relation(fields: [programId], references: [id])
+  caMaxMarks  Float              @default(25.0) // Continuous Assessment / Internal
+  esaMaxMarks Float              @default(75.0) // End Semester Assessment
+  
+  allocations CourseAllocation[]
+  examResults ExamResult[]
+}
+
+model CourseAllocation {
+  id           String         @id @default(cuid())
+  courseId     String
+  course       Course         @relation(fields: [courseId], references: [id])
+  facultyId    String
+  faculty      FacultyProfile @relation(fields: [facultyId], references: [id])
+  academicYear String         // e.g. 2026-2027
+  createdAt    DateTime       @default(now())
+}
+
+model AttendanceRecord {
+  id        String            @id @default(cuid())
+  programId String
+  semester  Int
+  section   String            @default("A")
+  date      DateTime
+  period    Int               @default(1)
+  recordedBy String
+  createdAt DateTime          @default(now())
+
+  entries   AttendanceEntry[]
+}
+
+model AttendanceEntry {
+  id                 String           @id @default(cuid())
+  attendanceRecordId String
+  record             AttendanceRecord @relation(fields: [attendanceRecordId], references: [id], onDelete: Cascade)
+  studentId          String
+  student            StudentProfile   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status             String           @default("PRESENT") // PRESENT, ABSENT, LATE, EXCUSED
+  remarks            String?
+
+  @@unique([attendanceRecordId, studentId])
+}
+
+model Exam {
+  id           String       @id @default(cuid())
+  title        String       // e.g. First Semester B.A. LL.B. Degree Examination
+  examCode     String       @unique // e.g. 47320105
+  programId    String
+  program      Program      @relation(fields: [programId], references: [id])
+  semester     Int
+  monthYear    String       // e.g. November 2026
+  academicYear String       // e.g. 2026-2027
+  status       String       @default("PUBLISHED") // DRAFT, SCHEDULED, PUBLISHED
+  createdAt    DateTime     @default(now())
+
+  results      ExamResult[]
+}
+
+model ExamResult {
+  id         String         @id @default(cuid())
+  examId     String
+  exam       Exam           @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseId   String
+  course     Course         @relation(fields: [courseId], references: [id])
+  
+  caMark     Float          @default(0.0) // Continuous Assessment (Max 25 or 20)
+  esaMark    Float          @default(0.0) // End Semester Assessment (Max 75 or 80)
+  totalMark  Float          @default(0.0)
+  gradePoint Float          @default(0.0) // 0 - 10
+  grade      String         @default("F") // A+, A, B+, B, C+, C, F
+  status     String         @default("PASSED") // PASSED, FAILED
+
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([examId, studentId, courseId])
+}
+
+model FeeStructure {
+  id          String    @id @default(cuid())
+  programId   String
+  program     Program   @relation(fields: [programId], references: [id])
+  semester    Int
+  title       String    // e.g. Semester 1 Tuition & Amenities Fee
+  tuitionFee  Float
+  specialFee  Float     @default(0.0)
+  libraryFee  Float     @default(0.0)
+  examFee     Float     @default(0.0)
+  totalAmount Float
+  
+  invoices    Invoice[]
+}
+
+model Invoice {
+  id             String           @id @default(cuid())
+  invoiceNo      String           @unique // e.g. INV-2026-00123
+  studentId      String
+  student        StudentProfile   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  feeStructureId String
+  feeStructure   FeeStructure     @relation(fields: [feeStructureId], references: [id])
+  totalAmount    Float
+  paidAmount     Float            @default(0.0)
+  status         String           @default("PENDING") // PENDING, PARTIAL, PAID
+  dueDate        DateTime
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  receipts       PaymentReceipt[]
+}
+
+model PaymentReceipt {
+  id             String   @id @default(cuid())
+  receiptNo      String   @unique // e.g. REC-2026-8941
+  invoiceId      String
+  invoice        Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amount         Float
+  paymentMethod  String   @default("CASH") // CASH, UPI, BANK_TRANSFER, CHEQUE
+  transactionRef String?
+  paidAt         DateTime @default(now())
+}
+
+model Notice {
+  id         String   @id @default(cuid())
+  title      String
+  content    String
+  category   String   @default("GENERAL") // ACADEMIC, EXAM, FEES, EVENT, GENERAL
+  targetRole String   @default("ALL") // ALL, FACULTY, STUDENT
+  authorName String   @default("Administration")
+  isPinned   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
