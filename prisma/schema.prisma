@@ -33,7 +33,9 @@ model StudentProfile {
   
   batch          String            // e.g. 2023-2028
   semester       Int               @default(1)
-  section        String            @default("A")
+  sectionName    String            @default("A")
+  sectionId      String?
+  section        Section?          @relation(fields: [sectionId], references: [id])
   
   gender         String?
   dob            DateTime?
@@ -52,27 +54,34 @@ model StudentProfile {
 }
 
 model FacultyProfile {
-  id           String             @id @default(cuid())
-  userId       String             @unique
-  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String             @id @default(cuid())
+  userId         String             @unique
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  employeeCode String             @unique
-  designation  String             // Professor, Associate Professor, Asst. Professor
-  department   String             // Law, Management, Humanities
-  qualification String?
-  phone        String?
-  joiningDate  DateTime           @default(now())
+  employeeCode   String             @unique
+  roleTitle      String             @default("ASSISTANT_PROFESSOR") // PRINCIPAL, VICE_PRINCIPAL, HOD, ASSISTANT_PROFESSOR, PROFESSOR
+  designation    String             // Principal, HoD Law, Asst. Professor in Law
+  departmentId   String?
+  department     Department?        @relation(fields: [departmentId], references: [id])
+  departmentName String             @default("Law")
+  qualification  String?
+  phone          String?
+  joiningDate    DateTime           @default(now())
+  maxWeeklyHours Int                @default(16)
 
-  allocations  CourseAllocation[]
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  allocations    CourseAllocation[]
+  timetableSlots TimetableSlot[]
+  mentoredSections Section[]        @relation("ClassTutor")
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 }
 
 model Department {
-  id       String    @id @default(cuid())
-  name     String    @unique
-  code     String    @unique
-  programs Program[]
+  id        String           @id @default(cuid())
+  name      String           @unique
+  code      String           @unique
+  programs  Program[]
+  faculties FacultyProfile[]
 }
 
 model Program {
@@ -85,24 +94,58 @@ model Program {
   department     Department       @relation(fields: [departmentId], references: [id])
 
   courses        Course[]
+  sections       Section[]
   students       StudentProfile[]
   feeStructures  FeeStructure[]
   exams          Exam[]
 }
 
-model Course {
-  id          String             @id @default(cuid())
-  code        String             @unique // e.g. EN 1121, LC 1101
-  name        String             // e.g. English Language Skills, Law of Contracts I
-  credits     Int                @default(4)
-  semester    Int
-  programId   String
-  program     Program            @relation(fields: [programId], references: [id])
-  caMaxMarks  Float              @default(25.0) // Continuous Assessment / Internal
-  esaMaxMarks Float              @default(75.0) // End Semester Assessment
+model Classroom {
+  id             String          @id @default(cuid())
+  name           String          @unique // e.g. Lecture Hall 101, Moot Court Hall
+  code           String          @unique // LH-101, MCH, SA-201
+  capacity       Int             @default(60)
+  type           String          @default("LECTURE_HALL") // LECTURE_HALL, MOOT_COURT, SEMINAR_HALL, CLINIC
+
+  timetableSlots TimetableSlot[]
+  sections       Section[]
+}
+
+model Section {
+  id            String          @id @default(cuid())
+  name          String          // "A", "B"
+  semester      Int
+  batch         String          // "2023-2028"
+  programId     String
+  program       Program         @relation(fields: [programId], references: [id])
   
-  allocations CourseAllocation[]
-  examResults ExamResult[]
+  classTutorId  String?
+  classTutor    FacultyProfile? @relation("ClassTutor", fields: [classTutorId], references: [id])
+  
+  defaultRoomId String?
+  defaultRoom   Classroom?      @relation(fields: [defaultRoomId], references: [id])
+
+  students      StudentProfile[]
+  timetableSlots TimetableSlot[]
+  attendance    AttendanceRecord[]
+
+  @@unique([programId, semester, batch, name])
+}
+
+model Course {
+  id             String             @id @default(cuid())
+  code           String             @unique // e.g. EN 1121, LC 1101
+  name           String             // e.g. English Language Skills, Law of Contracts I
+  credits        Int                @default(4)
+  semester       Int
+  programId      String
+  program        Program            @relation(fields: [programId], references: [id])
+  caMaxMarks     Float              @default(25.0) // Continuous Assessment / Internal
+  esaMaxMarks    Float              @default(75.0) // End Semester Assessment
+  
+  allocations    CourseAllocation[]
+  timetableSlots TimetableSlot[]
+  examResults    ExamResult[]
 }
 
 model CourseAllocation {
@@ -113,19 +156,51 @@ model CourseAllocation {
   faculty      FacultyProfile @relation(fields: [facultyId], references: [id])
   academicYear String         // e.g. 2026-2027
   createdAt    DateTime       @default(now())
+
+  @@unique([courseId, facultyId, academicYear])
+}
+
+model TimetableSlot {
+  id           String         @id @default(cuid())
+  dayOfWeek    Int            // 1 = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday, 5 = Friday
+  period       Int            // 1 to 5
+  startTime    String         // "09:30"
+  endTime      String         // "10:30"
+  
+  sectionId    String
+  section      Section        @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  
+  courseId     String
+  course       Course         @relation(fields: [courseId], references: [id])
+  
+  facultyId    String
+  faculty      FacultyProfile @relation(fields: [facultyId], references: [id])
+  
+  classroomId  String
+  classroom    Classroom      @relation(fields: [classroomId], references: [id])
+  
+  academicYear String         @default("2026-2027")
+  createdAt    DateTime       @default(now())
+
+  // Conflict prevention constraints:
+  @@unique([facultyId, dayOfWeek, period, academicYear])     // Teacher double-booking prevention
+  @@unique([classroomId, dayOfWeek, period, academicYear])   // Room double-booking prevention
+  @@unique([sectionId, dayOfWeek, period, academicYear])     // Section overlapping lecture prevention
 }
 
 model AttendanceRecord {
-  id        String            @id @default(cuid())
-  programId String
-  semester  Int
-  section   String            @default("A")
-  date      DateTime
-  period    Int               @default(1)
+  id         String            @id @default(cuid())
+  programId  String
+  semester   Int
+  sectionId  String?
+  sectionRef Section?          @relation(fields: [sectionId], references: [id])
+  section    String            @default("A")
+  date       DateTime
+  period     Int               @default(1)
   recordedBy String
-  createdAt DateTime          @default(now())
+  createdAt  DateTime          @default(now())
 
-  entries   AttendanceEntry[]
+  entries    AttendanceEntry[]
 }
 
 model AttendanceEntry {
@@ -164,8 +239,8 @@ model ExamResult {
   courseId   String
   course     Course         @relation(fields: [courseId], references: [id])
   
-  caMark     Float          @default(0.0) // Continuous Assessment (Max 25 or 20)
-  esaMark    Float          @default(0.0) // End Semester Assessment (Max 75 or 80)
+  caMark     Float          @default(0.0) // Continuous Assessment (Max 25)
+  esaMark    Float          @default(0.0) // End Semester Assessment (Max 75)
   totalMark  Float          @default(0.0)
   gradePoint Float          @default(0.0) // 0 - 10
   grade      String         @default("F") // A+, A, B+, B, C+, C, F
@@ -194,7 +269,7 @@ model FeeStructure {
 
 model Invoice {
   id             String           @id @default(cuid())
-  invoiceNo      String           @unique // e.g. INV-2026-00123
+  invoiceNo      String           @unique // e.g. INV-2026-00101
   studentId      String
   student        StudentProfile   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   feeStructureId String
@@ -211,7 +286,7 @@ model Invoice {
 
 model PaymentReceipt {
   id             String   @id @default(cuid())
-  receiptNo      String   @unique // e.g. REC-2026-8941
+  receiptNo      String   @unique // e.g. REC-2026-9001
   invoiceId      String
   invoice        Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   amount         Float

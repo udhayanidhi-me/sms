@@ -39,7 +39,7 @@ export default async function StudentDashboardPage() {
           </div>
           <h2 className="text-2xl font-bold tracking-tight mt-2 uppercase">{student.user.name}</h2>
           <p className="text-sm text-indigo-200/80">
-            {student.program.name} • Batch {student.batch} (Semester {student.semester}-Section {student.section})
+            {student.program.name} • Batch {student.batch} (Semester {student.semester}-Section {student.sectionName})
           </p>
           <p className="text-xs text-slate-400 mt-1">
             Moderator Gladstone CSI Institute of Legal Studies • University of Kerala

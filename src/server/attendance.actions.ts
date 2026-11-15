@@ -24,7 +24,7 @@ export async function getAttendanceRegister(
     where: {
       programId,
       semester,
-      section,
+      sectionName: section,
       status: "ACTIVE",
     },
     include: {

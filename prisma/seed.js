@@ -4,9 +4,9 @@ const bcrypt = require("bcryptjs");
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Starting seed for MGCSIILS Student Management System...");
+  console.log("🌱 Seeding MGCSIILS Full Institutional Hierarchy & Master Timetable...");
 
-  // 1. Clear existing data
+  // 1. Clear database
   await prisma.paymentReceipt.deleteMany({});
   await prisma.invoice.deleteMany({});
   await prisma.feeStructure.deleteMany({});
@@ -14,24 +14,44 @@ async function main() {
   await prisma.exam.deleteMany({});
   await prisma.attendanceEntry.deleteMany({});
   await prisma.attendanceRecord.deleteMany({});
+  await prisma.timetableSlot.deleteMany({});
   await prisma.courseAllocation.deleteMany({});
   await prisma.course.deleteMany({});
   await prisma.studentProfile.deleteMany({});
+  await prisma.section.deleteMany({});
+  await prisma.classroom.deleteMany({});
   await prisma.facultyProfile.deleteMany({});
   await prisma.user.deleteMany({});
   await prisma.program.deleteMany({});
   await prisma.department.deleteMany({});
   await prisma.notice.deleteMany({});
 
-  // 2. Department
+  // 2. Departments
   const lawDept = await prisma.department.create({
-    data: {
-      name: "Faculty of Law",
-      code: "LAW",
-    },
+    data: { name: "Faculty of Law", code: "LAW" },
+  });
+  const mgmtDept = await prisma.department.create({
+    data: { name: "Management & Social Sciences", code: "MGMT_HUM" },
   });
 
-  // 3. Programs
+  // 3. Classrooms
+  const roomLH101 = await prisma.classroom.create({
+    data: { name: "Lecture Hall 101", code: "LH-101", capacity: 70, type: "LECTURE_HALL" },
+  });
+  const roomLH102 = await prisma.classroom.create({
+    data: { name: "Lecture Hall 102", code: "LH-102", capacity: 70, type: "LECTURE_HALL" },
+  });
+  const roomLH201 = await prisma.classroom.create({
+    data: { name: "Lecture Hall 201", code: "LH-201", capacity: 70, type: "LECTURE_HALL" },
+  });
+  const roomMCH = await prisma.classroom.create({
+    data: { name: "Moot Court Hall", code: "MCH", capacity: 120, type: "MOOT_COURT" },
+  });
+  const roomSEM = await prisma.classroom.create({
+    data: { name: "Central Seminar Hall", code: "SEM", capacity: 250, type: "SEMINAR_HALL" },
+  });
+
+  // 4. Programs
   const baLlb = await prisma.program.create({
     data: {
       name: "5-Year Integrated B.A. LL.B.",
@@ -62,7 +82,7 @@ async function main() {
     },
   });
 
-  const llb3Yr = await prisma.program.create({
+  const unitaryLlb = await prisma.program.create({
     data: {
       name: "3-Year Unitary LL.B.",
       code: "LLB",
@@ -82,150 +102,270 @@ async function main() {
     },
   });
 
-  // 4. Courses for B.A. LL.B. Semester 1
+  // 5. Courses (Semester 1 B.A. LL.B.)
   const courseEnglish = await prisma.course.create({
-    data: {
-      code: "EN 1121",
-      name: "English Language Skills",
-      credits: 4,
-      semester: 1,
-      programId: baLlb.id,
-      caMaxMarks: 25.0,
-      esaMaxMarks: 75.0,
-    },
+    data: { code: "EN 1121", name: "English Language Skills", credits: 4, semester: 1, programId: baLlb.id },
   });
-
   const coursePolSci = await prisma.course.create({
-    data: {
-      code: "PS 1101",
-      name: "Principles of Political Science",
-      credits: 4,
-      semester: 1,
-      programId: baLlb.id,
-      caMaxMarks: 25.0,
-      esaMaxMarks: 75.0,
-    },
+    data: { code: "PS 1101", name: "Principles of Political Science", credits: 4, semester: 1, programId: baLlb.id },
   });
-
   const courseSoc = await prisma.course.create({
-    data: {
-      code: "SO 1101",
-      name: "Principles of Sociology",
-      credits: 4,
-      semester: 1,
-      programId: baLlb.id,
-      caMaxMarks: 25.0,
-      esaMaxMarks: 75.0,
-    },
+    data: { code: "SO 1101", name: "Principles of Sociology", credits: 4, semester: 1, programId: baLlb.id },
   });
-
   const courseTorts = await prisma.course.create({
-    data: {
-      code: "LC 1101",
-      name: "Law of Torts and Motor Vehicles Act",
-      credits: 4,
-      semester: 1,
-      programId: baLlb.id,
-      caMaxMarks: 25.0,
-      esaMaxMarks: 75.0,
-    },
+    data: { code: "LC 1101", name: "Law of Torts & Motor Vehicles Act", credits: 4, semester: 1, programId: baLlb.id },
   });
-
   const courseContracts = await prisma.course.create({
-    data: {
-      code: "LC 1102",
-      name: "General Principles of Contract",
-      credits: 4,
-      semester: 1,
-      programId: baLlb.id,
-      caMaxMarks: 25.0,
-      esaMaxMarks: 75.0,
-    },
+    data: { code: "LC 1102", name: "General Principles of Contract", credits: 4, semester: 1, programId: baLlb.id },
   });
 
-  // 5. Users: Admin, Faculty, Students
+  // Default Password
   const defaultPassword = await bcrypt.hash("Password@123", 10);
 
-  // Admin
-  const adminUser = await prisma.user.create({
+  // 6. Leadership & Faculty Roster
+  // Principal
+  const principalUser = await prisma.user.create({
     data: {
-      email: "admin@mgcsiils.edu.in",
+      name: "Dr. Lizzie Albert",
+      email: "principal@mgcsiils.edu.in",
       passwordHash: defaultPassword,
-      name: "Principal & Academic Office",
       role: "ADMIN",
     },
   });
-
-  // Faculty 1
-  const facultyUser1 = await prisma.user.create({
+  const principalProfile = await prisma.facultyProfile.create({
     data: {
-      email: "anand.kumar@mgcsiils.edu.in",
+      userId: principalUser.id,
+      employeeCode: "EMP-001",
+      roleTitle: "PRINCIPAL",
+      designation: "Principal & Professor of Law",
+      departmentId: lawDept.id,
+      departmentName: "Law",
+      qualification: "LL.M., Ph.D. in Constitutional Jurisprudence",
+      phone: "+91 94471 00001",
+      maxWeeklyHours: 8,
+    },
+  });
+
+  // Vice Principal
+  const vpUser = await prisma.user.create({
+    data: {
+      name: "Keerthi S. Jyothi",
+      email: "vp@mgcsiils.edu.in",
       passwordHash: defaultPassword,
-      name: "Prof. Adv. Anand Kumar",
+      role: "ADMIN",
+    },
+  });
+  const vpProfile = await prisma.facultyProfile.create({
+    data: {
+      userId: vpUser.id,
+      employeeCode: "EMP-002",
+      roleTitle: "VICE_PRINCIPAL",
+      designation: "Vice Principal & Associate Professor in Law",
+      departmentId: lawDept.id,
+      departmentName: "Law",
+      qualification: "LL.M., UGC-NET",
+      phone: "+91 94471 00002",
+      maxWeeklyHours: 12,
+    },
+  });
+
+  // HoD Law
+  const hodUser = await prisma.user.create({
+    data: {
+      name: "Manu S.R.",
+      email: "hod.law@mgcsiils.edu.in",
+      passwordHash: defaultPassword,
       role: "FACULTY",
     },
   });
-
-  const faculty1 = await prisma.facultyProfile.create({
+  const hodProfile = await prisma.facultyProfile.create({
     data: {
-      userId: facultyUser1.id,
-      employeeCode: "FAC-1001",
-      designation: "Associate Professor of Law",
-      department: "Law",
-      qualification: "LL.M., Ph.D., UGC-NET",
-      phone: "+91 94471 23456",
+      userId: hodUser.id,
+      employeeCode: "EMP-003",
+      roleTitle: "HOD",
+      designation: "Head of Department (Law) & Associate Professor",
+      departmentId: lawDept.id,
+      departmentName: "Law",
+      qualification: "LL.M., Ph.D.",
+      phone: "+91 94471 00003",
+      maxWeeklyHours: 14,
     },
   });
 
-  // Faculty 2
-  const facultyUser2 = await prisma.user.create({
+  // Assistant Professors
+  const facultyMembersData = [
+    { name: "Abhijith J.S.", email: "abhijith.js@mgcsiils.edu.in", code: "EMP-101", desig: "Assistant Professor in Law" },
+    { name: "Akshaya P.S.", email: "akshaya.ps@mgcsiils.edu.in", code: "EMP-102", desig: "Assistant Professor in Law" },
+    { name: "Haris A.", email: "haris.a@mgcsiils.edu.in", code: "EMP-103", desig: "Assistant Professor in Law" },
+    { name: "Josin Feba G.S.", email: "josin.feba@mgcsiils.edu.in", code: "EMP-104", desig: "Assistant Professor in Law" },
+    { name: "Lekshma V.H.", email: "lekshma.vh@mgcsiils.edu.in", code: "EMP-105", desig: "Assistant Professor in Law" },
+    { name: "Neethu L. Sekhar", email: "neethu.sekhar@mgcsiils.edu.in", code: "EMP-106", desig: "Assistant Professor in Law" },
+    { name: "Ancy A.Y.", email: "ancy.ay@mgcsiils.edu.in", code: "EMP-107", desig: "Assistant Professor in Management", dept: mgmtDept.id, deptName: "Management & Social Sciences" },
+    { name: "Dr. Meera Nair", email: "meera.nair@mgcsiils.edu.in", code: "EMP-108", desig: "Assistant Professor in Social Sciences", dept: mgmtDept.id, deptName: "Management & Social Sciences" },
+  ];
+
+  const facultyProfiles = {};
+  for (const f of facultyMembersData) {
+    const user = await prisma.user.create({
+      data: {
+        name: f.name,
+        email: f.email,
+        passwordHash: defaultPassword,
+        role: "FACULTY",
+      },
+    });
+
+    const prof = await prisma.facultyProfile.create({
+      data: {
+        userId: user.id,
+        employeeCode: f.code,
+        roleTitle: "ASSISTANT_PROFESSOR",
+        designation: f.desig,
+        departmentId: f.dept || lawDept.id,
+        departmentName: f.deptName || "Law",
+        qualification: "LL.M., UGC-NET",
+        phone: "+91 94471 000" + f.code.replace("EMP-", ""),
+        maxWeeklyHours: 16,
+      },
+    });
+
+    facultyProfiles[f.name] = prof;
+  }
+
+  // 7. Academic Sections
+  // Section A (Tutor: Abhijith J.S.)
+  const secA = await prisma.section.create({
     data: {
-      email: "meera.nair@mgcsiils.edu.in",
-      passwordHash: defaultPassword,
-      name: "Dr. Meera Nair",
-      role: "FACULTY",
+      name: "A",
+      semester: 1,
+      batch: "2023-2028",
+      programId: baLlb.id,
+      classTutorId: facultyProfiles["Abhijith J.S."].id,
+      defaultRoomId: roomLH101.id,
     },
   });
 
-  const faculty2 = await prisma.facultyProfile.create({
+  // Section B (Tutor: Akshaya P.S.)
+  const secB = await prisma.section.create({
     data: {
-      userId: facultyUser2.id,
-      employeeCode: "FAC-1002",
-      designation: "Assistant Professor of Social Sciences",
-      department: "Humanities",
-      qualification: "M.A. Political Science, Ph.D.",
-      phone: "+91 94472 34567",
+      name: "B",
+      semester: 1,
+      batch: "2023-2028",
+      programId: baLlb.id,
+      classTutorId: facultyProfiles["Akshaya P.S."].id,
+      defaultRoomId: roomLH102.id,
     },
   });
 
-  // Course allocations
+  // 3-Year LL.B. Section A (Tutor: Haris A.)
+  const secLlb = await prisma.section.create({
+    data: {
+      name: "A",
+      semester: 1,
+      batch: "2024-2027",
+      programId: unitaryLlb.id,
+      classTutorId: facultyProfiles["Haris A."].id,
+      defaultRoomId: roomLH201.id,
+    },
+  });
+
+  // 8. Course Allocations
   await prisma.courseAllocation.createMany({
     data: [
-      { courseId: courseTorts.id, facultyId: faculty1.id, academicYear: "2026-2027" },
-      { courseId: courseContracts.id, facultyId: faculty1.id, academicYear: "2026-2027" },
-      { courseId: coursePolSci.id, facultyId: faculty2.id, academicYear: "2026-2027" },
+      { courseId: courseTorts.id, facultyId: facultyProfiles["Abhijith J.S."].id, academicYear: "2026-2027" },
+      { courseId: courseContracts.id, facultyId: hodProfile.id, academicYear: "2026-2027" },
+      { courseId: courseEnglish.id, facultyId: facultyProfiles["Josin Feba G.S."].id, academicYear: "2026-2027" },
+      { courseId: coursePolSci.id, facultyId: facultyProfiles["Dr. Meera Nair"].id, academicYear: "2026-2027" },
+      { courseId: courseSoc.id, facultyId: facultyProfiles["Lekshma V.H."].id, academicYear: "2026-2027" },
     ],
   });
 
-  // Students
-  const student1User = await prisma.user.create({
+  // 9. Clash-Free Weekly Master Timetable for Section A (Monday - Friday, Periods 1 - 5)
+  // Daily Schedule times:
+  const periods = [
+    { period: 1, start: "09:30", end: "10:30" },
+    { period: 2, start: "10:30", end: "11:30" },
+    { period: 3, start: "11:45", end: "12:45" },
+    { period: 4, start: "01:45", end: "02:45" },
+    { period: 5, start: "02:45", end: "03:45" },
+  ];
+
+  // Routine grid for Section A
+  // Monday: Torts (Abhijith), Contracts (HoD Manu), English (Josin), PolSci (Meera), Sociology (Lekshma)
+  const timetablePlan = [
+    // Mon (day 1)
+    { day: 1, period: 1, course: courseTorts, faculty: facultyProfiles["Abhijith J.S."], room: roomLH101 },
+    { day: 1, period: 2, course: courseContracts, faculty: hodProfile, room: roomLH101 },
+    { day: 1, period: 3, course: courseEnglish, faculty: facultyProfiles["Josin Feba G.S."], room: roomLH101 },
+    { day: 1, period: 4, course: coursePolSci, faculty: facultyProfiles["Dr. Meera Nair"], room: roomLH101 },
+    { day: 1, period: 5, course: courseSoc, faculty: facultyProfiles["Lekshma V.H."], room: roomLH101 },
+
+    // Tue (day 2)
+    { day: 2, period: 1, course: courseContracts, faculty: hodProfile, room: roomLH101 },
+    { day: 2, period: 2, course: courseTorts, faculty: facultyProfiles["Abhijith J.S."], room: roomLH101 },
+    { day: 2, period: 3, course: courseSoc, faculty: facultyProfiles["Lekshma V.H."], room: roomLH101 },
+    { day: 2, period: 4, course: courseEnglish, faculty: facultyProfiles["Josin Feba G.S."], room: roomLH101 },
+    { day: 2, period: 5, course: coursePolSci, faculty: facultyProfiles["Dr. Meera Nair"], room: roomLH101 },
+
+    // Wed (day 3)
+    { day: 3, period: 1, course: coursePolSci, faculty: facultyProfiles["Dr. Meera Nair"], room: roomLH101 },
+    { day: 3, period: 2, course: courseEnglish, faculty: facultyProfiles["Josin Feba G.S."], room: roomLH101 },
+    { day: 3, period: 3, course: courseContracts, faculty: hodProfile, room: roomLH101 },
+    { day: 3, period: 4, course: courseTorts, faculty: facultyProfiles["Abhijith J.S."], room: roomMCH }, // In Moot Court Hall!
+    { day: 3, period: 5, course: courseSoc, faculty: facultyProfiles["Lekshma V.H."], room: roomLH101 },
+
+    // Thu (day 4)
+    { day: 4, period: 1, course: courseSoc, faculty: facultyProfiles["Lekshma V.H."], room: roomLH101 },
+    { day: 4, period: 2, course: courseTorts, faculty: facultyProfiles["Abhijith J.S."], room: roomLH101 },
+    { day: 4, period: 3, course: courseContracts, faculty: hodProfile, room: roomLH101 },
+    { day: 4, period: 4, course: coursePolSci, faculty: facultyProfiles["Dr. Meera Nair"], room: roomLH101 },
+    { day: 4, period: 5, course: courseEnglish, faculty: facultyProfiles["Josin Feba G.S."], room: roomLH101 },
+
+    // Fri (day 5)
+    { day: 5, period: 1, course: courseEnglish, faculty: facultyProfiles["Josin Feba G.S."], room: roomLH101 },
+    { day: 5, period: 2, course: coursePolSci, faculty: facultyProfiles["Dr. Meera Nair"], room: roomLH101 },
+    { day: 5, period: 3, course: courseTorts, faculty: facultyProfiles["Abhijith J.S."], room: roomLH101 },
+    { day: 5, period: 4, course: courseContracts, faculty: hodProfile, room: roomLH101 },
+    { day: 5, period: 5, course: courseSoc, faculty: facultyProfiles["Lekshma V.H."], room: roomLH101 },
+  ];
+
+  for (const item of timetablePlan) {
+    const pMeta = periods.find((p) => p.period === item.period);
+    await prisma.timetableSlot.create({
+      data: {
+        dayOfWeek: item.day,
+        period: item.period,
+        startTime: pMeta.start,
+        endTime: pMeta.end,
+        sectionId: secA.id,
+        courseId: item.course.id,
+        facultyId: item.faculty.id,
+        classroomId: item.room.id,
+        academicYear: "2026-2027",
+      },
+    });
+  }
+
+  // 10. Students
+  const sivaUser = await prisma.user.create({
     data: {
+      name: "SIVA GOVIND V",
       email: "siva.govind@student.mgcsiils.edu.in",
       passwordHash: defaultPassword,
-      name: "SIVA GOVIND V",
       role: "STUDENT",
     },
   });
 
-  const student1 = await prisma.studentProfile.create({
+  const siva = await prisma.studentProfile.create({
     data: {
-      userId: student1User.id,
+      userId: sivaUser.id,
       candidateCode: "47320105",
       registrationNo: "KER-2023-BALLB-042",
       programId: baLlb.id,
       batch: "2023-2028",
       semester: 1,
-      section: "A",
+      sectionName: "A",
+      sectionId: secA.id,
       gender: "Male",
       dob: new Date("2005-04-12"),
       phone: "+91 98470 11223",
@@ -236,105 +376,92 @@ async function main() {
     },
   });
 
-  const student2User = await prisma.user.create({
+  const ananyaUser = await prisma.user.create({
     data: {
+      name: "ANANYA KRISHNA",
       email: "ananya.krishna@student.mgcsiils.edu.in",
       passwordHash: defaultPassword,
-      name: "ANANYA KRISHNA",
       role: "STUDENT",
     },
   });
 
-  const student2 = await prisma.studentProfile.create({
+  const ananya = await prisma.studentProfile.create({
     data: {
-      userId: student2User.id,
+      userId: ananyaUser.id,
       candidateCode: "47320106",
       registrationNo: "KER-2023-BALLB-043",
       programId: baLlb.id,
       batch: "2023-2028",
       semester: 1,
-      section: "A",
+      sectionName: "A",
+      sectionId: secA.id,
       gender: "Female",
       dob: new Date("2005-08-20"),
       phone: "+91 98471 22334",
-      address: "Neyyattinkara, Thiruvananthapuram, Kerala - 695121",
+      address: "Neyyattinkara, Kerala - 695121",
       guardianName: "Krishnakumar S",
       guardianPhone: "+91 94473 88776",
       status: "ACTIVE",
     },
   });
 
-  const student3User = await prisma.user.create({
+  const rahulUser = await prisma.user.create({
     data: {
+      name: "RAHUL MATHEW",
       email: "rahul.mathew@student.mgcsiils.edu.in",
       passwordHash: defaultPassword,
-      name: "RAHUL MATHEW",
       role: "STUDENT",
     },
   });
 
-  const student3 = await prisma.studentProfile.create({
+  const rahul = await prisma.studentProfile.create({
     data: {
-      userId: student3User.id,
+      userId: rahulUser.id,
       candidateCode: "47320107",
       registrationNo: "KER-2023-BALLB-044",
       programId: baLlb.id,
       batch: "2023-2028",
       semester: 1,
-      section: "A",
+      sectionName: "A",
+      sectionId: secA.id,
       gender: "Male",
       dob: new Date("2004-11-15"),
       phone: "+91 98472 33445",
-      address: "Cheruvarakonam, Parassala, Kerala - 695502",
+      address: "Cheruvarakonam, Kerala - 695502",
       guardianName: "Mathew George",
       guardianPhone: "+91 94475 77665",
       status: "ACTIVE",
     },
   });
 
-  // 6. Attendance records (10 days)
+  // 11. Attendance Records (10 sessions)
   const today = new Date();
   for (let i = 9; i >= 0; i--) {
-    const recordDate = new Date(today);
-    recordDate.setDate(today.getDate() - i);
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
 
-    const record = await prisma.attendanceRecord.create({
+    const rec = await prisma.attendanceRecord.create({
       data: {
         programId: baLlb.id,
         semester: 1,
+        sectionId: secA.id,
         section: "A",
-        date: recordDate,
+        date: d,
         period: 1,
-        recordedBy: facultyUser1.name,
+        recordedBy: "Prof. Abhijith J.S. (Class Tutor)",
       },
     });
 
-    // Student 1: 90% (absent once on i=5)
-    // Student 2: 80% (absent on i=3, i=7)
-    // Student 3: 60% (absent on i=1, i=3, i=6, i=8) -> Shortage trigger (<75%)
     await prisma.attendanceEntry.createMany({
       data: [
-        {
-          attendanceRecordId: record.id,
-          studentId: student1.id,
-          status: i === 5 ? "ABSENT" : "PRESENT",
-        },
-        {
-          attendanceRecordId: record.id,
-          studentId: student2.id,
-          status: i === 3 || i === 7 ? "ABSENT" : "PRESENT",
-        },
-        {
-          attendanceRecordId: record.id,
-          studentId: student3.id,
-          status: [1, 3, 6, 8].includes(i) ? "ABSENT" : "PRESENT",
-          remarks: [1, 3, 6, 8].includes(i) ? "Uninformed absence" : null,
-        },
+        { attendanceRecordId: rec.id, studentId: siva.id, status: i === 5 ? "ABSENT" : "PRESENT" },
+        { attendanceRecordId: rec.id, studentId: ananya.id, status: i === 3 || i === 7 ? "ABSENT" : "PRESENT" },
+        { attendanceRecordId: rec.id, studentId: rahul.id, status: [1, 3, 6, 8].includes(i) ? "ABSENT" : "PRESENT" },
       ],
     });
   }
 
-  // 7. Exam & Results
+  // 12. Exam & Results
   const exam = await prisma.exam.create({
     data: {
       title: "First Semester Integrated B.A. LL.B. Degree Examination",
@@ -347,53 +474,37 @@ async function main() {
     },
   });
 
-  // Grading helper
-  function calculateGrade(total) {
-    if (total >= 90) return { grade: "A+", gp: 9.5 };
-    if (total >= 80) return { grade: "A", gp: 8.5 };
-    if (total >= 70) return { grade: "B+", gp: 7.5 };
-    if (total >= 60) return { grade: "B", gp: 6.5 };
-    if (total >= 50) return { grade: "C+", gp: 5.5 };
-    if (total >= 40) return { grade: "C", gp: 4.5 };
-    return { grade: "F", gp: 0.0 };
-  }
-
   const courses = [courseEnglish, coursePolSci, courseSoc, courseTorts, courseContracts];
   const marksData = [
-    { student: student1, ca: 23, esa: 65 }, // Total 88 (A)
-    { student: student2, ca: 21, esa: 58 }, // Total 79 (B+)
-    { student: student3, ca: 18, esa: 48 }, // Total 66 (B)
+    { student: siva, ca: 23, esa: 65, total: 88, gp: 8.5, grade: "A" },
+    { student: ananya, ca: 21, esa: 58, total: 79, gp: 7.5, grade: "B+" },
+    { student: rahul, ca: 18, esa: 48, total: 66, gp: 6.5, grade: "B" },
   ];
 
-  for (const item of marksData) {
+  for (const m of marksData) {
     for (const c of courses) {
-      const ca = item.ca + (Math.random() > 0.5 ? 1 : -1);
-      const esa = item.esa + (Math.random() > 0.5 ? 2 : -2);
-      const total = ca + esa;
-      const { grade, gp } = calculateGrade(total);
-
       await prisma.examResult.create({
         data: {
           examId: exam.id,
-          studentId: item.student.id,
+          studentId: m.student.id,
           courseId: c.id,
-          caMark: ca,
-          esaMark: esa,
-          totalMark: total,
-          gradePoint: gp,
-          grade: grade,
-          status: total >= 40 ? "PASSED" : "FAILED",
+          caMark: m.ca,
+          esaMark: m.esa,
+          totalMark: m.total,
+          gradePoint: m.gp,
+          grade: m.grade,
+          status: "PASSED",
         },
       });
     }
   }
 
-  // 8. Fee Structures & Invoices
+  // 13. Fee Structure & Invoices
   const feeStructure = await prisma.feeStructure.create({
     data: {
       programId: baLlb.id,
       semester: 1,
-      title: "Semester 1 Tuition & Institutional Amenities Fee",
+      title: "Semester 1 Tuition & Amenities Fee",
       tuitionFee: 32000,
       specialFee: 5000,
       libraryFee: 3500,
@@ -402,11 +513,10 @@ async function main() {
     },
   });
 
-  // Invoice 1: Paid Full
   const inv1 = await prisma.invoice.create({
     data: {
       invoiceNo: "INV-2026-00101",
-      studentId: student1.id,
+      studentId: siva.id,
       feeStructureId: feeStructure.id,
       totalAmount: 42500,
       paidAmount: 42500,
@@ -414,7 +524,6 @@ async function main() {
       dueDate: new Date("2026-12-15"),
     },
   });
-
   await prisma.paymentReceipt.create({
     data: {
       receiptNo: "REC-2026-9001",
@@ -425,11 +534,10 @@ async function main() {
     },
   });
 
-  // Invoice 2: Partially Paid
   const inv2 = await prisma.invoice.create({
     data: {
       invoiceNo: "INV-2026-00102",
-      studentId: student2.id,
+      studentId: ananya.id,
       feeStructureId: feeStructure.id,
       totalAmount: 42500,
       paidAmount: 25000,
@@ -437,7 +545,6 @@ async function main() {
       dueDate: new Date("2026-12-15"),
     },
   });
-
   await prisma.paymentReceipt.create({
     data: {
       receiptNo: "REC-2026-9002",
@@ -448,11 +555,10 @@ async function main() {
     },
   });
 
-  // Invoice 3: Pending
   await prisma.invoice.create({
     data: {
       invoiceNo: "INV-2026-00103",
-      studentId: student3.id,
+      studentId: rahul.id,
       feeStructureId: feeStructure.id,
       totalAmount: 42500,
       paidAmount: 0,
@@ -461,53 +567,46 @@ async function main() {
     },
   });
 
-  // 9. Notices
+  // 14. Notices
   await prisma.notice.createMany({
     data: [
       {
-        title: "Campus Health & Medical First-Aid Protocol Update",
+        title: "Campus Emergency Medical Assistance Room Operational",
         content:
-          "In compliance with safety recommendations, the administration has established a dedicated First-Aid & Emergency Response Room equipped with on-call transport assistance at the Main Administrative Block.",
+          "In full compliance with safety standards, a dedicated First-Aid & Emergency Response Room with vehicle transport assistance is now operational at the Administrative Block.",
         category: "GENERAL",
         targetRole: "ALL",
-        authorName: "Office of the Principal",
+        authorName: "Office of the Principal (Dr. Lizzie Albert)",
         isPinned: true,
       },
       {
-        title: "University Exam Registration & Hall Ticket Issuance (Nov 2026)",
-        content:
-          "All First Semester B.A. LL.B., B.Com. LL.B., and BBA LL.B. students must verify their subject registrations before Nov 20, 2026. Hall tickets will be issued through the portal.",
-        category: "EXAM",
-        targetRole: "STUDENT",
-        authorName: "Controller of Examinations",
-        isPinned: true,
-      },
-      {
-        title: "Faculty Moderation Committee Meeting for Continuous Assessment",
+        title: "Department of Law: Continuous Assessment Submission Deadline",
         content:
           "All Law Faculty members are requested to complete CA mark entries for Semester 1 subjects before 4:00 PM this Friday for moderation.",
         category: "ACADEMIC",
         targetRole: "FACULTY",
-        authorName: "Dean of Academic Affairs",
-        isPinned: false,
+        authorName: "Manu S.R. (HoD Law)",
+        isPinned: true,
       },
       {
-        title: "Moot Court Society: Intra-College Moot Selection 2026",
+        title: "Master Timetable Released for Academic Year 2026-2027",
         content:
-          "Registration is now open for the Annual Intra-College Moot Court Competition. Teams of 3 (2 Speakers + 1 Researcher) can sign up at the Moot Court Society room.",
-        category: "EVENT",
-        targetRole: "STUDENT",
-        authorName: "Moot Court Society MGCSIILS",
+          "The timetable for B.A. LL.B., B.Com. LL.B., BBA LL.B., and 3-Year LL.B. is finalized. Classes commence daily at 09:30 AM in respective assigned lecture halls.",
+        category: "ACADEMIC",
+        targetRole: "ALL",
+        authorName: "Keerthi S. Jyothi (Vice Principal)",
         isPinned: false,
       },
     ],
   });
 
-  console.log("✅ Seed completed successfully!");
-  console.log("\n--- Demo Credentials (Password: Password@123) ---");
-  console.log("Admin:   admin@mgcsiils.edu.in");
-  console.log("Faculty: anand.kumar@mgcsiils.edu.in");
-  console.log("Student: siva.govind@student.mgcsiils.edu.in");
+  console.log("✅ Seed completed successfully with full leadership roster!");
+  console.log("\n--- Demo Accounts (Password: Password@123) ---");
+  console.log("Principal:      principal@mgcsiils.edu.in (Dr. Lizzie Albert)");
+  console.log("Vice Principal: vp@mgcsiils.edu.in (Keerthi S. Jyothi)");
+  console.log("HoD Law:        hod.law@mgcsiils.edu.in (Manu S.R.)");
+  console.log("Class Tutor:    abhijith.js@mgcsiils.edu.in (Abhijith J.S.)");
+  console.log("Student:        siva.govind@student.mgcsiils.edu.in (Siva Govind V)");
 }
 
 main()

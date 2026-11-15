@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { loginAction } from "@/server/auth.actions";
-import { Shield, BookOpen, GraduationCap, Lock, Mail, AlertCircle, ArrowRight } from "lucide-react";
+import { Shield, BookOpen, GraduationCap, Lock, Mail, AlertCircle, ArrowRight, UserCheck, Briefcase } from "lucide-react";
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +29,7 @@ export default function LoginPage() {
         setLoading(false);
       }
     } catch {
-      // Next.js redirect throws an internal error, which is expected
+      // Next.js redirect throws expected internal error
     }
   };
 
@@ -112,34 +112,55 @@ export default function LoginPage() {
 
           <div className="mt-8 pt-6 border-t border-slate-700/60">
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-              One-Click Demo Roles
+              One-Click Leadership & Role Logins
             </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => handleDemoFill("admin@mgcsiils.edu.in", "Password@123")}
-                className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-900/60 hover:bg-indigo-950/40 border border-slate-700 hover:border-indigo-500/50 transition-all group"
+                onClick={() => handleDemoFill("principal@mgcsiils.edu.in", "Password@123")}
+                className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 hover:bg-indigo-950/40 border border-slate-700 hover:border-indigo-500/50 transition-all text-left"
               >
-                <Shield className="w-4 h-4 text-indigo-400 mb-1 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-medium text-slate-300">Admin</span>
+                <Shield className="w-4 h-4 text-indigo-400 shrink-0" />
+                <div>
+                  <div className="text-xs font-bold text-slate-200">Principal</div>
+                  <div className="text-[10px] text-slate-400">Dr. Lizzie Albert</div>
+                </div>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleDemoFill("anand.kumar@mgcsiils.edu.in", "Password@123")}
-                className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-900/60 hover:bg-emerald-950/40 border border-slate-700 hover:border-emerald-500/50 transition-all group"
+                onClick={() => handleDemoFill("hod.law@mgcsiils.edu.in", "Password@123")}
+                className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 hover:bg-purple-950/40 border border-slate-700 hover:border-purple-500/50 transition-all text-left"
               >
-                <BookOpen className="w-4 h-4 text-emerald-400 mb-1 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-medium text-slate-300">Faculty</span>
+                <Briefcase className="w-4 h-4 text-purple-400 shrink-0" />
+                <div>
+                  <div className="text-xs font-bold text-slate-200">HoD Law</div>
+                  <div className="text-[10px] text-slate-400">Manu S.R.</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDemoFill("abhijith.js@mgcsiils.edu.in", "Password@123")}
+                className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 hover:bg-emerald-950/40 border border-slate-700 hover:border-emerald-500/50 transition-all text-left"
+              >
+                <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div>
+                  <div className="text-xs font-bold text-slate-200">Class Tutor</div>
+                  <div className="text-[10px] text-slate-400">Abhijith J.S. (Sem 1-A)</div>
+                </div>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleDemoFill("siva.govind@student.mgcsiils.edu.in", "Password@123")}
-                className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-900/60 hover:bg-amber-950/40 border border-slate-700 hover:border-amber-500/50 transition-all group"
+                className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/60 hover:bg-amber-950/40 border border-slate-700 hover:border-amber-500/50 transition-all text-left"
               >
-                <GraduationCap className="w-4 h-4 text-amber-400 mb-1 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-medium text-slate-300">Student</span>
+                <GraduationCap className="w-4 h-4 text-amber-400 shrink-0" />
+                <div>
+                  <div className="text-xs font-bold text-slate-200">Student</div>
+                  <div className="text-[10px] text-slate-400">Siva Govind V</div>
+                </div>
               </button>
             </div>
           </div>

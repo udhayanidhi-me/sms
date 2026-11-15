@@ -20,7 +20,7 @@ export default async function FacultyDashboardPage() {
             </span>
             <h2 className="text-2xl font-bold mt-1">{faculty?.user.name}</h2>
             <p className="text-sm text-indigo-200/80">
-              {faculty?.designation} • Department of {faculty?.department}
+              {faculty?.designation} • Department of {faculty?.departmentName}
             </p>
           </div>
         </div>

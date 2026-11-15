@@ -137,7 +137,7 @@ export default async function AdminDashboardPage() {
                       {s.program.name}
                     </td>
                     <td className="px-6 py-4 text-xs text-slate-500">
-                      {s.batch} (Sem {s.semester}-{s.section})
+                      {s.batch} (Sem {s.semester}-{s.sectionName})
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">

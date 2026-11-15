@@ -181,7 +181,7 @@ export default async function AdminStudentsPage({
                   <td className="px-6 py-4">
                     <div className="font-medium text-slate-800 text-xs">{s.program.name}</div>
                     <div className="text-xs text-slate-500">
-                      Batch {s.batch} • Sem {s.semester} (Sec {s.section})
+                      Batch {s.batch} • Sem {s.semester} (Sec {s.sectionName})
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">

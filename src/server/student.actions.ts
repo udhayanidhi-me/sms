@@ -119,7 +119,7 @@ export async function createStudentAdmission(formData: FormData): Promise<void> 
         programId,
         batch: batch || "2026-2031",
         semester,
-        section,
+        sectionName: section,
         phone,
         gender,
         address,
