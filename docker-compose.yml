@@ -1,0 +1,18 @@
+services:
+  sms-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mgcsiils-sms
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=file:/app/data/sms.db
+      - JWT_SECRET=change_me_in_production_mgcsiils_2026
+      - NODE_ENV=production
+    volumes:
+      - sms-data:/app/data
+
+volumes:
+  sms-data:
